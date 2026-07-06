@@ -1,9 +1,10 @@
 const express = require('express')
 const cors = require('cors')
-const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 require('dotenv').config()
 
 const app = express()
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 app.use(cors())
 app.use(express.json())
@@ -16,21 +17,14 @@ app.post('/api/contact', async (req, res) => {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+    await resend.emails.send({
+      from: 'Portfolio Contact Form <onboarding@resend.dev>',
+      to: process.env.EMAIL_USER,
+      replyTo: email,
+      subject: `New Portfolio Message from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
     })
 
-    await transporter.sendMail({
-  from: `"Portfolio Contact Form" <${process.env.EMAIL_USER}>`,
-  to: process.env.EMAIL_USER,
-  replyTo: email,
-  subject: `New Portfolio Message from ${name}`,
-  text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
-})
     res.status(200).json({ success: 'Message sent successfully!' })
   } catch (error) {
     console.error(error)
