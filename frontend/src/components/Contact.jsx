@@ -21,7 +21,7 @@ const handleSubmit = async (e) => {
   setStatus('sending')
 
   try {
-    const response = await fetch('http://localhost:5000/api/contact', {
+    const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/contact',  {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
