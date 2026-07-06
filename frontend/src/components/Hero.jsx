@@ -19,7 +19,7 @@ function Hero() {
           View Projects
         </a>
         <a
-          href="/resume.pdf"
+          href="/Vishal_Yadav_Resume.pdf"
           download
           className="border-2 border-blue-600 text-blue-600 dark:text-blue-400 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 dark:hover:bg-gray-800 hover:-translate-y-0.5 transition-all"
         >
