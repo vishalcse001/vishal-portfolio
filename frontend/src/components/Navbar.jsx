@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Menu, X } from 'lucide-react'
 
 function Navbar() {
   const [activeSection, setActiveSection] = useState('home')
   const [darkMode, setDarkMode] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (darkMode) {
@@ -52,7 +53,8 @@ function Navbar() {
           Vishal <span className="text-blue-600">Yadav</span>
         </h1>
 
-        <div className="flex items-center gap-8">
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-8">
           <ul className="flex gap-8 font-medium">
             {navLinks.map((link) => (
               <li key={link.id} className="relative py-1">
@@ -86,7 +88,50 @@ function Navbar() {
             )}
           </button>
         </div>
+
+        {/* Mobile: Dark Mode + Hamburger */}
+        <div className="flex items-center gap-3 md:hidden">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 transition-colors"
+          >
+            {darkMode ? (
+              <Sun size={18} className="text-yellow-400" />
+            ) : (
+              <Moon size={18} className="text-gray-700" />
+            )}
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-gray-800 dark:text-white"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Dropdown Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-900 px-6 pb-4 shadow-md">
+          <ul className="flex flex-col gap-4 font-medium">
+            {navLinks.map((link) => (
+              <li key={link.id}>
+                <a
+                  href={`#${link.id}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block py-2 transition-colors ${
+                    activeSection === link.id
+                      ? 'text-blue-600 font-semibold'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </nav>
   )
 }
