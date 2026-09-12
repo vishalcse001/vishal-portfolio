@@ -23,4 +23,14 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE Request: Database se project hatane ke liye
+router.delete('/:id', async (req, res) => {
+  try {
+    await Project.findByIdAndDelete(req.params.id);
+    res.json({ message: "Project deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
