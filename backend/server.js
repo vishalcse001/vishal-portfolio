@@ -56,9 +56,11 @@ app.post('/api/contact', contactLimiter, [
   }
 })
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/portfolioDB')
-  .then(() => console.log("✅ MongoDB Connected successfully!"))
-  .catch((err) => console.log("❌ MongoDB connection error:", err));
+mongoose.connect(process.env.MONGO_URI, {
+  family: 4 // Ye line Node.js ko strictly IPv4 use karne ko bolegi
+})
+.then(() => console.log("MongoDB Connected successfully!"))
+.catch((err) => console.log("MongoDB connection error:", err));
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
