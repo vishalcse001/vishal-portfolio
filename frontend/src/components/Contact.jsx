@@ -80,7 +80,7 @@ function Contact() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email
             </label>
             <input
@@ -89,13 +89,13 @@ function Contact() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Message
             </label>
             <textarea
@@ -104,7 +104,7 @@ function Contact() {
               onChange={handleChange}
               required
               rows="5"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               placeholder="Your message..."
             ></textarea>
           </div>
@@ -112,7 +112,7 @@ function Contact() {
           <button
             type="submit"
             disabled={status === "sending"}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+            className="hover-target w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
           >
             {status === "sending" ? "Sending..." : "Send Message"}
           </button>

@@ -13,8 +13,10 @@
     "@tailwindcss/vite": "^4.3.2",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.23.0",
+    "next-themes": "^0.4.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-parallax-tilt": "^1.7.342",
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {

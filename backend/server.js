@@ -4,20 +4,41 @@ const { Resend } = require('resend')
 require('dotenv').config()
 const mongoose = require('mongoose');
 const projectRoutes = require('./routes/projectRoutes');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
 const app = express()
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Rate limiting for API requests to prevent spam
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // limit each IP to 5 contact requests per hour
+  message: 'Too many contact requests from this IP, please try again later'
+});
+
 app.use(cors())
 app.use(express.json())
+app.use('/api/', apiLimiter);
 app.use('/api/projects', projectRoutes);
 
-app.post('/api/contact', async (req, res) => {
-  const { name, email, message } = req.body
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'All fields are required' })
+app.post('/api/contact', contactLimiter, [
+  body('name').trim().notEmpty().withMessage('Name is required').escape(),
+  body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('message').trim().notEmpty().withMessage('Message is required').escape()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
   }
+
+  const { name, email, message } = req.body
 
   try {
     await resend.emails.send({

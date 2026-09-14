@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Sun, Moon, Menu, X } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function Navbar() {
   const [activeSection, setActiveSection] = useState('home')
-  const [darkMode, setDarkMode] = useState(false)
+  const { theme, setTheme, systemTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [darkMode])
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const sections = ['home', 'about', 'skills', 'projects', 'contact']
@@ -46,10 +45,13 @@ function Navbar() {
     { id: 'contact', label: 'Contact' },
   ]
 
+  const currentTheme = theme === 'system' ? systemTheme : theme
+  const isDark = currentTheme === 'dark'
+
   return (
-    <nav className="fixed top-0 w-full bg-white dark:bg-gray-900 shadow-md z-50 transition-colors">
+    <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-md z-50 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white hover-target">
           Vishal <span className="text-blue-600">Yadav</span>
         </h1>
 
@@ -60,7 +62,7 @@ function Navbar() {
               <li key={link.id} className="relative py-1">
                 <a
                   href={`#${link.id}`}
-                  className={`transition-colors ${
+                  className={`hover-target transition-colors ${
                     activeSection === link.id
                       ? 'text-blue-600 font-semibold'
                       : 'text-gray-700 dark:text-gray-300 hover:text-blue-600'
@@ -77,30 +79,34 @@ function Navbar() {
             ))}
           </ul>
 
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            {darkMode ? (
-              <Sun size={18} className="text-yellow-400" />
-            ) : (
-              <Moon size={18} className="text-gray-700" />
-            )}
-          </button>
+          {mounted && (
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover-target"
+            >
+              {isDark ? (
+                <Sun size={18} className="text-yellow-400" />
+              ) : (
+                <Moon size={18} className="text-gray-700" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Mobile: Dark Mode + Hamburger */}
         <div className="flex items-center gap-3 md:hidden">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 transition-colors"
-          >
-            {darkMode ? (
-              <Sun size={18} className="text-yellow-400" />
-            ) : (
-              <Moon size={18} className="text-gray-700" />
-            )}
-          </button>
+          {mounted && (
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 transition-colors"
+            >
+              {isDark ? (
+                <Sun size={18} className="text-yellow-400" />
+              ) : (
+                <Moon size={18} className="text-gray-700" />
+              )}
+            </button>
+          )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-gray-800 dark:text-white"
@@ -111,27 +117,34 @@ function Navbar() {
       </div>
 
       {/* Mobile Dropdown Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 px-6 pb-4 shadow-md">
-          <ul className="flex flex-col gap-4 font-medium">
-            {navLinks.map((link) => (
-              <li key={link.id}>
-                <a
-                  href={`#${link.id}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block py-2 transition-colors ${
-                    activeSection === link.id
-                      ? 'text-blue-600 font-semibold'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white dark:bg-slate-900 px-6 overflow-hidden shadow-md"
+          >
+            <ul className="flex flex-col gap-4 font-medium py-4">
+              {navLinks.map((link) => (
+                <li key={link.id}>
+                  <a
+                    href={`#${link.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block py-2 transition-colors ${
+                      activeSection === link.id
+                        ? 'text-blue-600 font-semibold'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }
