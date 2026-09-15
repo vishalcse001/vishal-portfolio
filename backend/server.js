@@ -5,8 +5,12 @@ require('dotenv').config()
 const mongoose = require('mongoose');
 const projectRoutes = require('./routes/projectRoutes');
 const authRoutes = require('./routes/authRoutes');
+const experienceRoutes = require('./routes/experienceRoutes');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
+
+const messageRoutes = require('./routes/messageRoutes');
+const Message = require('./models/Message');
 
 const app = express()
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -29,6 +33,8 @@ app.use(express.json())
 app.use('/api/', apiLimiter);
 app.use('/api/projects', projectRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/experience', experienceRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.post('/api/contact', contactLimiter, [
   body('name').trim().notEmpty().withMessage('Name is required').escape(),
@@ -50,6 +56,7 @@ app.post('/api/contact', contactLimiter, [
       subject: `New Portfolio Message from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
     })
+    await Message.create({ name, email, message });
 
     res.status(200).json({ success: 'Message sent successfully!' })
   } catch (error) {

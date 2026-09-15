@@ -15,7 +15,7 @@ function Navbar() {
   }, [])
 
   useEffect(() => {
-    const sections = ['home', 'about', 'skills', 'projects', 'contact']
+    const sections = ['home', 'about', 'skills', 'projects', 'contact', 'experience']
 
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 150

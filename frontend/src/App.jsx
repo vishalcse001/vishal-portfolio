@@ -8,6 +8,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import CustomCursor from './components/CustomCursor';
 import AdminPanel from './components/AdminPanel';
+import Experience from './components/Experience';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Hero />
             <About />
             <Skills />
+            <Experience />
             <Projects />
             <Contact />
             <Footer />
