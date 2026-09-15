@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
+const authMiddleware = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware'); // Naya Upload Guard import kiya
 
-// Guard (Middleware) ko import kiya
-const authMiddleware = require('../middleware/authMiddleware'); 
-
-// 1. GET Request: Projects dekhne ke liye (Isme guard NAHI hai, kyunki public ko projects dikhne chahiye)
+// 1. GET: Public ke dekhne ke liye
 router.get('/', async (req, res) => {
   try {
     const projects = await Project.find();
@@ -15,10 +14,24 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. POST Request: Naya project add karne ke liye (Isme guard LAGAYA hai)
-router.post('/', authMiddleware, async (req, res) => {
-  const project = new Project(req.body);
+// 2. POST: Admin dwara naya Project Add karna (File upload ke sath)
+// upload.single('image') ka matlab hai ki request me 'image' naam ki ek file aayegi
+router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   try {
+    const projectData = {
+      title: req.body.title,
+      description: req.body.description,
+      techStack: req.body.techStack ? req.body.techStack.split(',').map(tech => tech.trim()) : [],
+      githubLink: req.body.githubLink,
+      liveLink: req.body.liveLink,
+    };
+
+    // Agar photo upload hui hai, toh Cloudinary ka URL data me jod do
+    if (req.file && req.file.path) {
+      projectData.image = req.file.path; 
+    }
+
+    const project = new Project(projectData);
     const newProject = await project.save();
     res.status(201).json(newProject);
   } catch (err) {
@@ -26,7 +39,7 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// 3. DELETE Request: Project delete karne ke liye (Isme bhi guard LAGAYA hai)
+// 3. DELETE: Admin dwara Delete karne ke liye
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     await Project.findByIdAndDelete(req.params.id);
