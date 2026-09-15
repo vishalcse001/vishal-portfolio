@@ -4,6 +4,7 @@ const { Resend } = require('resend')
 require('dotenv').config()
 const mongoose = require('mongoose');
 const projectRoutes = require('./routes/projectRoutes');
+const authRoutes = require('./routes/authRoutes');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 
@@ -27,6 +28,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/api/', apiLimiter);
 app.use('/api/projects', projectRoutes);
+app.use('/api/auth', authRoutes);
 
 app.post('/api/contact', contactLimiter, [
   body('name').trim().notEmpty().withMessage('Name is required').escape(),
