@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
+const Project = require('../models/Project');
+const Experience = require('../models/Experience');
 
-// Gemini AI Setup (Using official @google/genai SDK)
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 router.post('/', async (req, res) => {
@@ -10,37 +11,40 @@ router.post('/', async (req, res) => {
     const { message } = req.body;
     if (!message) return res.status(400).json({ reply: "Please ask a question!" });
 
-    // Tumhara Professional Context (AI ko batane ke liye ki tum kaun ho)
-    const portfolioContext = `
-      You are an AI assistant for Vishal Yadav's professional portfolio website. 
-      Answer questions strictly based on Vishal's profile. Be polite, professional, and concise.
-      
-      Profile Details:
+    // 1. RAG: Database se live projects aur timeline fetch karo
+    const projects = await Project.find();
+    const experiences = await Experience.find();
+
+    // 2. Data ko text format me convert karo taaki AI samajh sake
+    const projectsText = projects.map(p => `- Title: ${p.title}\n  Description: ${p.description}\n  Tech Stack: ${p.techStack.join(', ')}`).join('\n');
+    const experienceText = experiences.map(e => `- [${e.category}] Role: ${e.role} at ${e.company} (${e.duration}, ${e.location}). Details: ${e.description.join(' ')}`).join('\n');
+
+    // 3. Dynamic Context Design karo jo database ke sath hamesha Live Update rahega
+    const livePortfolioContext = `
+      You are an expert AI recruiter assistant for Vishal Yadav's professional portfolio website. 
+      Answer questions strictly and accurately based on the live database information provided below. Be polite, professional, and concise.
+
+      Candidate Profile:
       - Name: Vishal Yadav
       - Role: Full-Stack Web Developer & AI/ML Enthusiast
-      - Education: B.Tech in Computer Science and Engineering from Rajarshi Rananjaya Sinh Institute of Management and Technology, Amethi (Graduating 2026). Completed 10th & 12th from Shri Shiv Pratap Inter College, Amethi (UP Board).
-      - Technical Skills: JavaScript, Python, C, C++, Java, MERN Stack (MongoDB, Express.js, React.js, Node.js), Docker, Kubernetes, Git, Postman, VS Code.
-      - Projects: 
-        1. Real-Time AI Gym Trainer (Python, OpenCV, MediaPipe for posture monitoring).
-        2. Intelligent AI Attendance System (Facial recognition, Python, OpenCV).
-        3. Kubernetes-Based Container Deployment Platform (Docker, Kubernetes orchestration).
-        4. Full-Stack Social Media Web App (React, Node, Express, MongoDB, JWT auth).
-        5. Umang AI (Custom AI voice project using ElevenLabs).
-      - Experience: Completed a 6-month MERN stack internship at Softpro India in Lucknow.
-      - Contact: Recruiters can reach out via the contact form or email.
+      - Education & Timeline (From Database):
+      ${experienceText}
+
+      Projects Built (From Database):
+      ${projectsText}
 
       User Question: ${message}
     `;
 
-    // Calling Gemini Model
+    // 4. Gemini AI Model ko live context ke sath call karo
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: portfolioContext,
+      contents: livePortfolioContext,
     });
 
     res.json({ reply: response.text });
   } catch (err) {
-    console.error("Chatbot Error:", err);
+    console.error("Chatbot RAG Error:", err);
     res.status(500).json({ reply: "Sorry, I am having trouble connecting to AI right now." });
   }
 });
