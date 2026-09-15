@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import CustomCursor from './components/CustomCursor';
 import AdminPanel from './components/AdminPanel';
 import Experience from './components/Experience';
+import Chatbot from './components/Chatbot';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Projects />
             <Contact />
             <Footer />
+            <Chatbot />
           </>
         } />
         
