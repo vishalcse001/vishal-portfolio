@@ -20,7 +20,7 @@ function AdminPanel() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('https://vishal-portfolio-j3gb.onrender.com');
+      const res = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/projects');
       const data = await res.json();
       if (Array.isArray(data)) setProjects(data);
     } catch (err) {
@@ -31,7 +31,7 @@ function AdminPanel() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com', {
+      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -59,7 +59,7 @@ function AdminPanel() {
     };
 
     try {
-      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com', {
+      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/projects', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     if(window.confirm("Are you sure you want to delete this project?")) {
       try {
-        const response = await fetch(`https://vishal-portfolio-j3gb.onrender.com/${id}`, {
+        const response = await fetch(`https://vishal-portfolio-j3gb.onrender.com/api/projects/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
