@@ -5,7 +5,7 @@ function Experience() {
   const [isLoading, setIsLoading] = useState(true); // Naya switch banaya loading ke liye
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/experience')
+    fetch('https://vishal-portfolio-j3gb.onrender.com/api/experience')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setExperiences(data);
