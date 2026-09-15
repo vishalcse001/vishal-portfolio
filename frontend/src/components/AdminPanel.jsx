@@ -11,6 +11,7 @@ function AdminPanel() {
   const [messages, setMessages] = useState([]); 
   
   const [formData, setFormData] = useState({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' });
+  const [imageFile, setImageFile] = useState(null);
   const [expFormData, setExpFormData] = useState({ category: 'Experience', role: '', company: '', duration: '', location: '', current: false, description: '' });
   
   const [replyingTo, setReplyingTo] = useState(null);
@@ -64,16 +65,34 @@ function AdminPanel() {
     } catch (error) { console.error(error); }
   };
 
-  const handleAddProject = async (e) => {
+ const handleAddProject = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('adminToken');
-    const formattedData = { ...formData, techStack: formData.techStack.split(',').map(tech => tech.trim()) };
+    
+    // Photo bhejne ke liye FormData banana padta hai
+    const submitData = new FormData();
+    submitData.append('title', formData.title);
+    submitData.append('description', formData.description);
+    submitData.append('techStack', formData.techStack);
+    submitData.append('githubLink', formData.githubLink);
+    submitData.append('liveLink', formData.liveLink);
+    if (imageFile) {
+      submitData.append('image', imageFile); // Photo yahan add ho rahi hai
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/projects`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formattedData)
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }, // Notice: Content-Type hata diya hai, browser khud set karega
+        body: submitData
       });
-      if (response.ok) { alert("Project Added!"); setFormData({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' }); fetchData(); }
+      if (response.ok) {
+        alert("Project Added with Image!");
+        setFormData({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' });
+        setImageFile(null);
+        document.getElementById('fileInput').value = ""; // File input ko clear karne ke liye
+        fetchData();
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -193,6 +212,17 @@ function AdminPanel() {
                     <input type="text" placeholder="GitHub Link" value={formData.githubLink} onChange={e => setFormData({...formData, githubLink: e.target.value})} className={inputStyles} />
                     <input type="text" placeholder="Live Demo Link" value={formData.liveLink} onChange={e => setFormData({...formData, liveLink: e.target.value})} className={inputStyles} />
                   </div>
+                  <div className="flex flex-col gap-1">
+   <label className="text-xs text-gray-400 font-bold uppercase tracking-wider ml-1">Upload Project Image</label>
+   <input 
+      type="file" 
+      id="fileInput"
+      accept="image/*" 
+      onChange={e => setImageFile(e.target.files[0])} 
+      className="w-full text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer bg-gray-900 border border-gray-700 rounded-xl"
+      required
+   />
+</div>
                   <button type="submit" className={`${btnPrimary} mt-2`}>Publish Project</button>
                 </form>
               </div>
