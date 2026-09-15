@@ -30,17 +30,17 @@ function AdminPanel() {
       const token = localStorage.getItem('adminToken');
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const projRes = await fetch('http://localhost:5000/api/projects');
+      const projRes = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/projects');
       const projData = await projRes.json();
       if (Array.isArray(projData)) setProjects(projData);
 
-      const expRes = await fetch('http://localhost:5000/api/experience');
+      const expRes = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/experience');
       const expData = await expRes.json();
       if (Array.isArray(expData)) setExperiences(expData);
 
       // Messages sirf Admin mangwa sakta hai (token ke sath)
       if (token) {
-        const msgRes = await fetch('http://localhost:5000/api/messages', { headers });
+        const msgRes = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/messages', { headers });
         const msgData = await msgRes.json();
         if (Array.isArray(msgData)) setMessages(msgData);
       }
@@ -50,7 +50,7 @@ function AdminPanel() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -70,7 +70,7 @@ function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     const formattedData = { ...formData, techStack: formData.techStack.split(',').map(tech => tech.trim()) };
     try {
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/projects', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formattedData)
       });
@@ -83,7 +83,7 @@ function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     const formattedData = { ...expFormData, description: expFormData.description.split('\n').filter(d => d.trim() !== '') };
     try {
-      const response = await fetch('http://localhost:5000/api/experience', {
+      const response = await fetch('https://vishal-portfolio-j3gb.onrender.com/api/experience', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formattedData)
       });
@@ -95,7 +95,7 @@ function AdminPanel() {
     const token = localStorage.getItem('adminToken');
     if(window.confirm(`Are you sure you want to delete this?`)) {
       try {
-        const response = await fetch(`http://localhost:5000/api/${type}/${id}`, {
+        const response = await fetch(`https://vishal-portfolio-j3gb.onrender.com/api/${type}/${id}`, {
           method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) fetchData();
@@ -108,7 +108,7 @@ function AdminPanel() {
     e.preventDefault();
     const token = localStorage.getItem('adminToken');
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/reply/${replyingTo._id}`, {
+      const response = await fetch(`https://vishal-portfolio-j3gb.onrender.com/api/messages/reply/${replyingTo._id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ replyText })
