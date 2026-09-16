@@ -6,6 +6,62 @@ const Experience = require('../models/Experience');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// Agar primary model overload (503) ho jaye, toh inhe try karo
+const MODEL_CHAIN = [
+  'models/gemini-2.5-flash',
+  'models/gemini-2.5-flash-lite',
+  'models/gemini-1.5-flash',
+];
+
+// Helper: check karo ki error "overloaded / high demand" wala hai ya nahi
+function isOverloadedError(err) {
+  const status = err?.error?.code || err?.status || err?.status_code;
+  const statusText = err?.error?.status;
+  return status === 503 || statusText === 'UNAVAILABLE';
+}
+
+// Helper: exponential backoff ke saath ek model try karo
+async function tryModelWithRetry(modelName, contents, maxRetries = 2) {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await ai.models.generateContent({
+        model: modelName,
+        contents,
+      });
+    } catch (err) {
+      lastError = err;
+      if (isOverloadedError(err) && attempt < maxRetries - 1) {
+        const delay = 800 * Math.pow(2, attempt); // 800ms, 1600ms...
+        console.warn(`[${modelName}] overloaded, retrying in ${delay}ms (attempt ${attempt + 1})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
+// Helper: pura model chain try karo (fallback ke saath)
+async function generateContentWithFallback(contents) {
+  let lastError;
+  for (const modelName of MODEL_CHAIN) {
+    try {
+      return await tryModelWithRetry(modelName, contents);
+    } catch (err) {
+      lastError = err;
+      if (isOverloadedError(err)) {
+        console.warn(`Model ${modelName} overloaded, trying next fallback model...`);
+        continue; // agla model try karo
+      }
+      // Agar overload wala error nahi hai (jaise auth ya bad request), turant fail ho jao
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
 router.post('/', async (req, res) => {
   try {
     const { message } = req.body;
@@ -20,7 +76,7 @@ router.post('/', async (req, res) => {
     const experienceText = experiences.map(e => `- [${e.category}] Role: ${e.role} at ${e.company} (${e.duration}, ${e.location}). Details: ${e.description.join(' ')}`).join('\n');
 
     // 3. Dynamic Context Design
-      const livePortfolioContext = `
+    const livePortfolioContext = `
       You are an expert AI recruiter assistant for Vishal Yadav's professional portfolio website. 
       Answer questions strictly and accurately based on the live database information provided below. Be polite, professional, and concise.
       
@@ -37,16 +93,20 @@ router.post('/', async (req, res) => {
 
       User Question: ${message}
     `;
-    // Calling Gemini Model
-    const response = await ai.models.generateContent({
-      model: 'models/gemini-2.5-flash', // Prefix 'models/' 
-      contents: livePortfolioContext,
-    });
+
+    // 4. Gemini call, retry + fallback ke saath
+    const response = await generateContentWithFallback(livePortfolioContext);
 
     res.json({ reply: response.text });
   } catch (err) {
     console.error("Chatbot RAG Error:", err);
-    res.status(500).json({ reply: "Sorry, I am having trouble connecting to AI right now." });
+
+    const overloaded = isOverloadedError(err);
+    res.status(overloaded ? 503 : 500).json({
+      reply: overloaded
+        ? "AI thoda busy hai abhi (high demand). Please 10-15 seconds baad dobara try karein!"
+        : "Sorry, I am having trouble connecting to AI right now.",
+    });
   }
 });
 
