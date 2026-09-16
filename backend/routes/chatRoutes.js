@@ -19,10 +19,12 @@ router.post('/', async (req, res) => {
     const projectsText = projects.map(p => `- Title: ${p.title}\n  Description: ${p.description}\n  Tech Stack: ${p.techStack.join(', ')}`).join('\n');
     const experienceText = experiences.map(e => `- [${e.category}] Role: ${e.role} at ${e.company} (${e.duration}, ${e.location}). Details: ${e.description.join(' ')}`).join('\n');
 
-    // 3. Dynamic Context Design karo jo database ke sath hamesha Live Update rahega
-    const livePortfolioContext = `
+    // 3. Dynamic Context Design
+      const livePortfolioContext = `
       You are an expert AI recruiter assistant for Vishal Yadav's professional portfolio website. 
       Answer questions strictly and accurately based on the live database information provided below. Be polite, professional, and concise.
+      
+      CRITICAL INSTRUCTION: Vishal has COMPLETED his B.Tech degree (Duration: 2022-2026). Never use the word "pursuing" or say he is currently studying; always state that he has completed his B.Tech in Computer Science and Engineering.
 
       Candidate Profile:
       - Name: Vishal Yadav
@@ -35,7 +37,6 @@ router.post('/', async (req, res) => {
 
       User Question: ${message}
     `;
-
     // 4. Gemini AI Model ko live context ke sath call karo
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
