@@ -84,6 +84,8 @@ router.post('/', async (req, res) => {
 
       Candidate Profile:
       - Name: Vishal Yadav
+      - Contact Number: +919336191749
+      - Email:vishalyadav.95055@gmail.com
       - Role: Full-Stack Web Developer & AI/ML Enthusiast
       - Education & Timeline (From Database):
       ${experienceText}
