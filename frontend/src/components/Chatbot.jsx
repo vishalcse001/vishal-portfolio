@@ -21,10 +21,16 @@ function Chatbot() {
 
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage })
-      });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: userMessage,
+    history: messages.map(m => ({
+      role: m.sender === 'user' ? 'user' : 'assistant',
+      text: m.text
+    }))
+  })
+});
       const data = await res.json();
       setMessages(prev => [...prev, { sender: 'ai', text: data.reply }]);
     } catch (err) {
