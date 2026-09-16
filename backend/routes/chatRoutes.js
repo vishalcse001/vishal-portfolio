@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
     `;
     // Calling Gemini Model
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash', 
+      model: 'models/gemini-2.5-flash', // Prefix 'models/' 
       contents: livePortfolioContext,
     });
 
