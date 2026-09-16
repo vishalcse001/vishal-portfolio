@@ -37,9 +37,9 @@ router.post('/', async (req, res) => {
 
       User Question: ${message}
     `;
-    // 4. Gemini AI Model ko live context ke sath call karo
+    // Calling Gemini Model
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash', 
       contents: livePortfolioContext,
     });
 

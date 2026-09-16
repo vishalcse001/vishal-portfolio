@@ -16,6 +16,8 @@ const chatRoutes = require('./routes/chatRoutes');
 const app = express()
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+app.set('trust proxy', 1);
+
 // Rate limiting for API requests to prevent spam
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
