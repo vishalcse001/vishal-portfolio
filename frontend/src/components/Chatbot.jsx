@@ -21,19 +21,14 @@ function Chatbot() {
 
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    message: userMessage,
-    history: messages.map(m => ({
-      role: m.sender === 'user' ? 'user' : 'assistant',
-      text: m.text
-    }))
-  })
-});
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
       const data = await res.json();
       setMessages(prev => [...prev, { sender: 'ai', text: data.reply }]);
-    } catch (err) {
+    } catch (error) {
+      console.error("Chat error:", error); // Fix: Used the error variable
       setMessages(prev => [...prev, { sender: 'ai', text: "Error connecting to AI service." }]);
     } finally {
       setLoading(false);
@@ -42,20 +37,19 @@ function Chatbot() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Floating Chat Button */}
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-blue-400/30"
+          // Fix: Changed to bg-linear-to-r
+          className="bg-linear-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-blue-400/30"
         >
           💬 AI Assistant
         </button>
       )}
 
-      {/* Chat Window */}
       {isOpen && (
-        <div className="bg-gray-900 border border-gray-700 w-80 sm:w-96 h-[450px] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-          {/* Header */}
+        // Fix: Changed h-[450px] to h-112.5
+        <div className="bg-gray-900 border border-gray-700 w-80 sm:w-96 h-112.5 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           <div className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
@@ -64,7 +58,6 @@ function Chatbot() {
             <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white font-bold text-lg">✕</button>
           </div>
 
-          {/* Messages Body */}
           <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3">
             {messages.map((msg, index) => (
               <div key={index} className={`max-w-[80%] p-3 rounded-xl text-sm ${msg.sender === 'user' ? 'bg-blue-600 text-white self-end rounded-br-none' : 'bg-gray-800 text-gray-200 self-start rounded-bl-none border border-gray-700'}`}>
@@ -74,7 +67,6 @@ function Chatbot() {
             {loading && <div className="bg-gray-800 text-gray-400 p-3 rounded-xl text-sm self-start animate-pulse">AI is typing...</div>}
           </div>
 
-          {/* Input Form */}
           <form onSubmit={handleSendMessage} className="p-3 bg-gray-800 border-t border-gray-700 flex gap-2">
             <input 
               type="text" 
