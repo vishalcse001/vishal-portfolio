@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 function AdminPanel() {
+  // --- STATE VARIABLES ---
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -9,27 +10,28 @@ function AdminPanel() {
   const [projects, setProjects] = useState([]);
   const [experiences, setExperiences] = useState([]);
   const [messages, setMessages] = useState([]); 
+  const [notes, setNotes] = useState([]); 
   
-  const [formData, setFormData] = useState({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' });
+  const [formData, setFormData] = useState({ title: '', description: '', techStack: '', githubLink: '', liveLink: '' });
   const [imageFile, setImageFile] = useState(null);
   const [expFormData, setExpFormData] = useState({ category: 'Experience', role: '', company: '', duration: '', location: '', current: false, description: '' });
-
-  const [notes, setNotes] = useState([]);
-  const [noteForm, setNoteForm] = useState({ title: '', content: '' });
-  const [editingNoteId, setEditingNoteId] = useState(null); // Edit karne ke liye
   
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
 
+  const [noteForm, setNoteForm] = useState({ title: '', content: '' }); 
+  const [editingNoteId, setEditingNoteId] = useState(null);
+
   const API_URL = 'https://vishal-portfolio-j3gb.onrender.com';
 
+  // --- USE EFFECT & FETCH DATA ---
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    if (token) {
-      setIsLoggedIn(true);
-      fetchData();
+    if (token) { 
+      setIsLoggedIn(true); 
+      fetchData(); 
     }
-  }, []);
+  }, []); // Eslint warning fixed by making sure array is empty here
 
   const fetchData = async () => {
     try {
@@ -44,62 +46,55 @@ function AdminPanel() {
       const expData = await expRes.json();
       if (Array.isArray(expData)) setExperiences(expData);
 
-      const notesRes = await fetch(`${API_URL}/api/notes`, { headers });
-      const notesData = await notesRes.json();
-      if (Array.isArray(notesData)) setNotes(notesData);
-
       if (token) {
         const msgRes = await fetch(`${API_URL}/api/messages`, { headers });
         const msgData = await msgRes.json();
         if (Array.isArray(msgData)) setMessages(msgData);
+
+        const notesRes = await fetch(`${API_URL}/api/notes`, { headers });
+        const notesData = await notesRes.json();
+        if (Array.isArray(notesData)) setNotes(notesData);
       }
     } catch (err) { console.error(err); }
   };
 
+  // --- HANDLERS ---
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password })
       });
       const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
-        setIsLoggedIn(true);
-        fetchData();
+      if (response.ok) { 
+        localStorage.setItem('adminToken', data.token); 
+        setIsLoggedIn(true); 
+        fetchData(); 
       } else { alert(data.message || "Login failed!"); }
     } catch (error) { console.error(error); }
   };
 
- const handleAddProject = async (e) => {
+  const handleAddProject = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('adminToken');
-    
-    // Photo bhejne ke liye FormData banana padta hai
     const submitData = new FormData();
     submitData.append('title', formData.title);
     submitData.append('description', formData.description);
     submitData.append('techStack', formData.techStack);
     submitData.append('githubLink', formData.githubLink);
     submitData.append('liveLink', formData.liveLink);
-    if (imageFile) {
-      submitData.append('image', imageFile); // Photo yahan add ho rahi hai
-    }
+    if (imageFile) submitData.append('image', imageFile);
 
     try {
       const response = await fetch(`${API_URL}/api/projects`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }, // Notice: Content-Type hata diya hai, browser khud set karega
-        body: submitData
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: submitData
       });
-      if (response.ok) {
-        alert("Project Added with Image!");
-        setFormData({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' });
+      if (response.ok) { 
+        alert("Project Added with Image!"); 
+        setFormData({ title: '', description: '', techStack: '', githubLink: '', liveLink: '' }); 
         setImageFile(null);
-        document.getElementById('fileInput').value = ""; // File input ko clear karne ke liye
-        fetchData();
+        document.getElementById('fileInput').value = "";
+        fetchData(); 
       }
     } catch (err) { console.error(err); }
   };
@@ -110,23 +105,40 @@ function AdminPanel() {
     const formattedData = { ...expFormData, description: expFormData.description.split('\n').filter(d => d.trim() !== '') };
     try {
       const response = await fetch(`${API_URL}/api/experience`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formattedData)
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formattedData)
       });
-      if (response.ok) { alert(`${expFormData.category} Added!`); setExpFormData({ category: 'Experience', role: '', company: '', duration: '', location: '', current: false, description: '' }); fetchData(); }
+      if (response.ok) { 
+        alert(`${expFormData.category} Added!`); 
+        setExpFormData({ category: 'Experience', role: '', company: '', duration: '', location: '', current: false, description: '' }); 
+        fetchData(); 
+      }
     } catch (err) { console.error(err); }
   };
 
-  const handleDelete = async (type, id) => {
+  const handleSaveNote = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem('adminToken');
-    if(window.confirm(`Are you sure you want to delete this?`)) {
-      try {
-        const response = await fetch(`${API_URL}/api/${type}/${id}`, {
-          method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) fetchData();
-      } catch (err) { console.error(err); }
-    }
+    try {
+      const url = editingNoteId ? `${API_URL}/api/notes/${editingNoteId}` : `${API_URL}/api/notes`;
+      const method = editingNoteId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(noteForm)
+      });
+
+      if (response.ok) {
+        alert(editingNoteId ? "Note Updated!" : "Note Saved!");
+        setNoteForm({ title: '', content: '' });
+        setEditingNoteId(null);
+        fetchData();
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleEditNote = (note) => {
+    setEditingNoteId(note._id);
+    setNoteForm({ title: note.title, content: note.content });
+    window.scrollTo(0,0);
   };
 
   const handleReply = async (e) => {
@@ -139,7 +151,7 @@ function AdminPanel() {
         body: JSON.stringify({ replyText })
       });
       if (response.ok) {
-        alert("Reply Sent to User's Email Successfully!");
+        alert("Reply Sent Successfully!");
         setReplyingTo(null);
         setReplyText('');
         fetchData(); 
@@ -147,58 +159,48 @@ function AdminPanel() {
     } catch (err) { console.error(err); }
   };
 
-  // Modern UI Styles
-  const inputStyles = "w-full p-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-100 placeholder-gray-500 transition-all";
-  const cardStyles = "bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700";
-  const btnPrimary = "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-0.5";
+  const handleDelete = async (type, id) => {
+    const token = localStorage.getItem('adminToken');
+    if(window.confirm(`Are you sure you want to delete this?`)) {
+      try {
+        const response = await fetch(`${API_URL}/api/${type}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        if (response.ok) fetchData();
+      } catch (err) { console.error(err); }
+    }
+  };
 
-  // ===================== LOGIN UI =====================
+  // --- STYLES ---
+  const inputStyles = "w-full p-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 text-gray-100 placeholder-gray-500 transition-all";
+  const cardStyles = "bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700";
+  const btnPrimary = "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all";
+
+  // --- LOGIN UI ---
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0f1a] px-4 font-sans relative overflow-hidden">
-        {/* Background glow effects */}
-        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px]"></div>
-        
         <div className="bg-gray-900/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-gray-800 w-full max-w-md z-10">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Admin Portal</h2>
-            <p className="text-gray-400 mt-2 text-sm">Secure access for Vishal Yadav</p>
-          </div>
+          <div className="text-center mb-8"><h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Admin Portal</h2></div>
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
-            <div>
-              <label className="text-sm text-gray-400 font-semibold mb-1 block">Email Address</label>
-              <input type="email" placeholder="admin@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyles} required />
-            </div>
-            <div>
-              <label className="text-sm text-gray-400 font-semibold mb-1 block">Password</label>
-              <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyles} required />
-            </div>
-            <button type="submit" className={`${btnPrimary} mt-2`}>Secure Login</button>
+            <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyles} required />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyles} required />
+            <button type="submit" className={btnPrimary}>Secure Login</button>
           </form>
         </div>
       </div>
     );
   }
 
-  // ===================== DASHBOARD UI =====================
+  // --- DASHBOARD UI ---
   return (
     <div className="min-h-screen bg-[#0a0f1a] text-gray-100 font-sans pb-10">
-      {/* Top Navbar */}
       <nav className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 tracking-wide">
-            Workspace
-          </h1>
+          <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Workspace</h1>
           <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
             <button onClick={() => setActiveTab('projects')} className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${activeTab === 'projects' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/50' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>🚀 Projects</button>
             <button onClick={() => setActiveTab('experience')} className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${activeTab === 'experience' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/50' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>🎓 Timeline</button>
-            <button onClick={() => setActiveTab('messages')} className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === 'messages' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/50' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-              📬 Inbox 
-              {messages.filter(m => !m.replied).length > 0 && (
-                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{messages.filter(m => !m.replied).length}</span>
-              )}
-            </button>
+            <button onClick={() => setActiveTab('notes')} className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${activeTab === 'notes' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/50' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>📝 Notes</button>
+            <button onClick={() => setActiveTab('messages')} className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === 'messages' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/50' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>📬 Inbox</button>
             <button onClick={() => { localStorage.removeItem('adminToken'); setIsLoggedIn(false); }} className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 px-5 py-2 rounded-lg text-sm font-semibold transition-all ml-2">Logout</button>
           </div>
         </div>
@@ -206,7 +208,7 @@ function AdminPanel() {
 
       <div className="max-w-7xl mx-auto px-6 mt-10">
         
-        {/* ===================== PROJECTS TAB ===================== */}
+        {/* PROJECTS TAB */}
         {activeTab === 'projects' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
             <div className="lg:col-span-5 space-y-6">
@@ -221,16 +223,9 @@ function AdminPanel() {
                     <input type="text" placeholder="Live Demo Link" value={formData.liveLink} onChange={e => setFormData({...formData, liveLink: e.target.value})} className={inputStyles} />
                   </div>
                   <div className="flex flex-col gap-1">
-   <label className="text-xs text-gray-400 font-bold uppercase tracking-wider ml-1">Upload Project Image</label>
-   <input 
-      type="file" 
-      id="fileInput"
-      accept="image/*" 
-      onChange={e => setImageFile(e.target.files[0])} 
-      className="w-full text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer bg-gray-900 border border-gray-700 rounded-xl"
-      required
-   />
-</div>
+                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider ml-1">Upload Image</label>
+                    <input type="file" id="fileInput" accept="image/*" onChange={e => setImageFile(e.target.files[0])} className="w-full text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer bg-gray-900 border border-gray-700 rounded-xl" required />
+                  </div>
                   <button type="submit" className={`${btnPrimary} mt-2`}>Publish Project</button>
                 </form>
               </div>
@@ -240,9 +235,9 @@ function AdminPanel() {
                 <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-indigo-500 rounded-full"></span> Active Projects</h2>
                 <div className="flex flex-col gap-3">
                   {projects.map(project => (
-                    <div key={project._id} className="group border border-gray-700 bg-gray-900/50 p-4 rounded-xl flex justify-between items-center hover:border-blue-500/50 transition-all">
+                    <div key={project._id} className="border border-gray-700 bg-gray-900/50 p-4 rounded-xl flex justify-between items-center">
                       <div>
-                        <h3 className="font-bold text-gray-200 group-hover:text-blue-400 transition-colors">{project.title}</h3>
+                        <h3 className="font-bold text-gray-200">{project.title}</h3>
                         <p className="text-xs text-gray-500 mt-1">{project.techStack.join(' • ')}</p>
                       </div>
                       <button onClick={() => handleDelete('projects', project._id)} className="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-all">Delete</button>
@@ -255,7 +250,7 @@ function AdminPanel() {
           </div>
         )}
 
-        {/* ===================== TIMELINE TAB ===================== */}
+        {/* TIMELINE TAB */}
         {activeTab === 'experience' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
             <div className="lg:col-span-5 space-y-6">
@@ -301,7 +296,7 @@ function AdminPanel() {
           </div>
         )}
 
-        {/* ===================== MESSAGES TAB ===================== */}
+        {/* INBOX TAB */}
         {activeTab === 'messages' && (
           <div className={`${cardStyles} max-w-4xl mx-auto animate-fade-in`}>
             <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-pink-500 rounded-full"></span> Client Inquiries</h2>
@@ -322,7 +317,6 @@ function AdminPanel() {
                       <button onClick={() => handleDelete('messages', msg._id)} className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">Trash</button>
                     </div>
                   </div>
-                  
                   <p className="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed">{msg.message}</p>
                   
                   {replyingTo?._id === msg._id && (
@@ -338,14 +332,56 @@ function AdminPanel() {
                 </div>
               ))}
               {messages.length === 0 && (
-                <div className="text-center py-16">
-                  <span className="text-5xl opacity-50">📭</span>
-                  <p className="text-gray-500 font-semibold mt-4">No new inquiries.</p>
-                </div>
+                <div className="text-center py-16"><span className="text-5xl opacity-50">📭</span><p className="text-gray-500 font-semibold mt-4">No new inquiries.</p></div>
               )}
             </div>
           </div>
         )}
+
+        {/* NOTES TAB */}
+        {activeTab === 'notes' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+            <div className="lg:col-span-5 space-y-6">
+              <div className={cardStyles}>
+                <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-yellow-500 rounded-full"></span> {editingNoteId ? 'Edit Note' : 'Create Quick Note'}</h2>
+                <form onSubmit={handleSaveNote} className="flex flex-col gap-4">
+                  <input type="text" placeholder="Note Title (e.g., Ideas for Project)" value={noteForm.title} onChange={e => setNoteForm({...noteForm, title: e.target.value})} className={inputStyles} required />
+                  <textarea placeholder="Write your task, idea, or reminder here..." value={noteForm.content} onChange={e => setNoteForm({...noteForm, content: e.target.value})} className={`${inputStyles} h-40 resize-none`} required />
+                  <div className="flex gap-2">
+                    <button type="submit" className={`${btnPrimary} flex-1`}>{editingNoteId ? 'Update Note' : 'Save Note'}</button>
+                    {editingNoteId && (
+                      <button type="button" onClick={() => { setEditingNoteId(null); setNoteForm({ title: '', content: '' }); }} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-bold transition-all">Cancel</button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div className="lg:col-span-7">
+              <div className={cardStyles}>
+                <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-orange-500 rounded-full"></span> Saved Notes & Reminders</h2>
+                <div className="flex flex-col gap-4">
+                  {notes.map(note => (
+                    <div key={note._id} className="border border-gray-700 bg-gray-900/50 p-5 rounded-xl flex flex-col gap-3">
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-bold text-lg text-yellow-400">{note.title}</h3>
+                          <span className="text-[10px] text-gray-500">{new Date(note.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-gray-300 text-sm mt-2 whitespace-pre-wrap">{note.content}</p>
+                      </div>
+                      <div className="flex gap-2 justify-end border-t border-gray-800 pt-3 mt-1">
+                        <button onClick={() => handleEditNote(note)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Edit</button>
+                        <button onClick={() => handleDelete('notes', note._id)} className="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                  {notes.length === 0 && <p className="text-center text-gray-500 py-10">No notes saved yet.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
