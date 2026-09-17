@@ -13,6 +13,10 @@ function AdminPanel() {
   const [formData, setFormData] = useState({ title: '', description: '', techStack: '', githubLink: '', liveLink: '', image: '' });
   const [imageFile, setImageFile] = useState(null);
   const [expFormData, setExpFormData] = useState({ category: 'Experience', role: '', company: '', duration: '', location: '', current: false, description: '' });
+
+  const [notes, setNotes] = useState([]);
+  const [noteForm, setNoteForm] = useState({ title: '', content: '' });
+  const [editingNoteId, setEditingNoteId] = useState(null); // Edit karne ke liye
   
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -39,6 +43,10 @@ function AdminPanel() {
       const expRes = await fetch(`${API_URL}/api/experience`);
       const expData = await expRes.json();
       if (Array.isArray(expData)) setExperiences(expData);
+
+      const notesRes = await fetch(`${API_URL}/api/notes`, { headers });
+      const notesData = await notesRes.json();
+      if (Array.isArray(notesData)) setNotes(notesData);
 
       if (token) {
         const msgRes = await fetch(`${API_URL}/api/messages`, { headers });

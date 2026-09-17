@@ -12,6 +12,7 @@ const { body, validationResult } = require('express-validator');
 const messageRoutes = require('./routes/messageRoutes');
 const Message = require('./models/Message');
 const chatRoutes = require('./routes/chatRoutes');
+const noteRoutes = require('./routes/noteRoutes');
 
 const app = express()
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -39,6 +40,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/experience', experienceRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/notes', noteRoutes);
 
 app.post('/api/contact', contactLimiter, [
   body('name').trim().notEmpty().withMessage('Name is required').escape(),
