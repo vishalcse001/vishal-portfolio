@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Eye, EyeOff, Lock, Unlock, Copy, Check } from 'lucide-react';
 
 function AdminPanel() {
   // --- STATE VARIABLES ---
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(localStorage.getItem('adminToken')));
   const [activeTab, setActiveTab] = useState('projects'); 
   
   const [projects, setProjects] = useState([]);
@@ -19,21 +20,15 @@ function AdminPanel() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
 
-  const [noteForm, setNoteForm] = useState({ title: '', content: '' }); 
+  const [noteForm, setNoteForm] = useState({ title: '', content: '', isSecret: false }); 
   const [editingNoteId, setEditingNoteId] = useState(null);
+  const [revealedNotes, setRevealedNotes] = useState({});
+  const [copiedNoteId, setCopiedNoteId] = useState(null);
 
   const API_URL = 'https://vishal-portfolio-j3gb.onrender.com';
 
-  // --- USE EFFECT & FETCH DATA ---
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) { 
-      setIsLoggedIn(true); 
-      fetchData(); 
-    }
-  }, []); // Eslint warning fixed by making sure array is empty here
-
-  const fetchData = async () => {
+  // --- FETCH DATA & USE EFFECT ---
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem('adminToken');
       const headers = { 'Authorization': `Bearer ${token}` };
@@ -56,7 +51,14 @@ function AdminPanel() {
         if (Array.isArray(notesData)) setNotes(notesData);
       }
     } catch (err) { console.error(err); }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchData();
+    }
+  }, [isLoggedIn, fetchData]);
 
   // --- HANDLERS ---
   const handleLogin = async (e) => {
@@ -128,7 +130,7 @@ function AdminPanel() {
 
       if (response.ok) {
         alert(editingNoteId ? "Note Updated!" : "Note Saved!");
-        setNoteForm({ title: '', content: '' });
+        setNoteForm({ title: '', content: '', isSecret: false });
         setEditingNoteId(null);
         fetchData();
       }
@@ -137,8 +139,47 @@ function AdminPanel() {
 
   const handleEditNote = (note) => {
     setEditingNoteId(note._id);
-    setNoteForm({ title: note.title, content: note.content });
+    setNoteForm({ title: note.title, content: note.content, isSecret: Boolean(note.isSecret) });
     window.scrollTo(0,0);
+  };
+
+  const toggleRevealNote = (id) => {
+    setRevealedNotes(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleCopyNoteContent = (id, content) => {
+    navigator.clipboard.writeText(content);
+    setCopiedNoteId(id);
+    setTimeout(() => {
+      setCopiedNoteId(null);
+    }, 2000);
+  };
+
+  const handleToggleNoteSecret = async (note) => {
+    const token = localStorage.getItem('adminToken');
+    try {
+      const updatedSecret = !note.isSecret;
+      const response = await fetch(`${API_URL}/api/notes/${note._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          title: note.title,
+          content: note.content,
+          isSecret: updatedSecret
+        })
+      });
+      if (response.ok) {
+        if (updatedSecret) {
+          setRevealedNotes(prev => ({ ...prev, [note._id]: false }));
+        }
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleReply = async (e) => {
@@ -345,12 +386,30 @@ function AdminPanel() {
               <div className={cardStyles}>
                 <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-yellow-500 rounded-full"></span> {editingNoteId ? 'Edit Note' : 'Create Quick Note'}</h2>
                 <form onSubmit={handleSaveNote} className="flex flex-col gap-4">
-                  <input type="text" placeholder="Note Title (e.g., Ideas for Project)" value={noteForm.title} onChange={e => setNoteForm({...noteForm, title: e.target.value})} className={inputStyles} required />
-                  <textarea placeholder="Write your task, idea, or reminder here..." value={noteForm.content} onChange={e => setNoteForm({...noteForm, content: e.target.value})} className={`${inputStyles} h-40 resize-none`} required />
+                  <input type="text" placeholder="Note Title (e.g., WiFi Password, Server Key)" value={noteForm.title} onChange={e => setNoteForm({...noteForm, title: e.target.value})} className={inputStyles} required />
+                  <textarea placeholder="Write your note, password, or sensitive details here..." value={noteForm.content} onChange={e => setNoteForm({...noteForm, content: e.target.value})} className={`${inputStyles} h-40 resize-none`} required />
+                  
+                  {/* Secret / Password Toggle */}
+                  <label className="flex items-center gap-3 text-gray-300 text-sm cursor-pointer p-3 bg-gray-900 border border-gray-700 rounded-xl hover:border-yellow-500/50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(noteForm.isSecret)}
+                      onChange={e => setNoteForm({ ...noteForm, isSecret: e.target.checked })}
+                      className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-yellow-500 focus:ring-yellow-500 accent-yellow-500 cursor-pointer"
+                    />
+                    <div className="flex items-center gap-2 select-none">
+                      <Lock className="w-4 h-4 text-yellow-400 shrink-0" />
+                      <div>
+                        <span className="font-semibold text-gray-200 block">Hide Content (Password / Secret)</span>
+                        <span className="text-xs text-gray-500 block">Content will remain hidden by default until you click Show</span>
+                      </div>
+                    </div>
+                  </label>
+
                   <div className="flex gap-2">
                     <button type="submit" className={`${btnPrimary} flex-1`}>{editingNoteId ? 'Update Note' : 'Save Note'}</button>
                     {editingNoteId && (
-                      <button type="button" onClick={() => { setEditingNoteId(null); setNoteForm({ title: '', content: '' }); }} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-bold transition-all">Cancel</button>
+                      <button type="button" onClick={() => { setEditingNoteId(null); setNoteForm({ title: '', content: '', isSecret: false }); }} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-bold transition-all">Cancel</button>
                     )}
                   </div>
                 </form>
@@ -358,23 +417,126 @@ function AdminPanel() {
             </div>
             <div className="lg:col-span-7">
               <div className={cardStyles}>
-                <h2 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2"><span className="w-2 h-6 bg-orange-500 rounded-full"></span> Saved Notes & Reminders</h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2"><span className="w-2 h-6 bg-orange-500 rounded-full"></span> Saved Notes & Passwords</h2>
+                  <span className="text-xs text-gray-400 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">{notes.length} Total</span>
+                </div>
                 <div className="flex flex-col gap-4">
-                  {notes.map(note => (
-                    <div key={note._id} className="border border-gray-700 bg-gray-900/50 p-5 rounded-xl flex flex-col gap-3">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-bold text-lg text-yellow-400">{note.title}</h3>
-                          <span className="text-[10px] text-gray-500">{new Date(note.createdAt).toLocaleDateString()}</span>
+                  {notes.map(note => {
+                    const isHiddenNote = Boolean(note.isSecret);
+                    const isRevealed = Boolean(revealedNotes[note._id]);
+
+                    return (
+                      <div key={note._id} className={`border rounded-xl p-5 flex flex-col gap-3 transition-all ${
+                        isHiddenNote ? 'border-yellow-500/30 bg-gray-900/70 shadow-[0_0_15px_rgba(234,179,8,0.05)]' : 'border-gray-700 bg-gray-900/50'
+                      }`}>
+                        <div>
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-lg text-yellow-400">{note.title}</h3>
+                              {isHiddenNote && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
+                                  <Lock className="w-3 h-3" /> Password / Secret
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-500 shrink-0">{new Date(note.createdAt).toLocaleDateString()}</span>
+                          </div>
+
+                          {/* Content Section */}
+                          <div className="mt-3">
+                            {isHiddenNote ? (
+                              <div className="bg-gray-950 p-3.5 rounded-xl border border-gray-800">
+                                <div className="flex items-center justify-between gap-2 border-b border-gray-800 pb-2 mb-2">
+                                  <span className="text-xs text-gray-400 flex items-center gap-1.5">
+                                    {isRevealed ? (
+                                      <><Unlock className="w-3.5 h-3.5 text-green-400" /> <span className="text-green-400 font-medium">Visible</span></>
+                                    ) : (
+                                      <><Lock className="w-3.5 h-3.5 text-yellow-400" /> <span className="text-yellow-400 font-medium">Hidden by default</span></>
+                                    )}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleRevealNote(note._id)}
+                                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
+                                      title={isRevealed ? "Hide Password" : "Show Password"}
+                                    >
+                                      {isRevealed ? (
+                                        <>
+                                          <EyeOff className="w-3.5 h-3.5 text-gray-400" />
+                                          <span>Hide</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Eye className="w-3.5 h-3.5 text-yellow-400" />
+                                          <span>Show</span>
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyNoteContent(note._id, note.content)}
+                                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
+                                      title="Copy content"
+                                    >
+                                      {copiedNoteId === note._id ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-green-400" />
+                                          <span className="text-green-400">Copied!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3.5 h-3.5 text-gray-400" />
+                                          <span>Copy</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {isRevealed ? (
+                                  <p className="text-gray-100 text-sm whitespace-pre-wrap font-mono select-all bg-gray-900 p-2.5 rounded-lg border border-gray-800 break-all">
+                                    {note.content}
+                                  </p>
+                                ) : (
+                                  <div className="py-2 px-2 flex items-center justify-between">
+                                    <span className="font-mono text-base tracking-[0.25em] text-gray-500 select-none">
+                                      ••••••••••••••••
+                                    </span>
+                                    <span className="text-xs text-gray-500 italic">Click "Show" to view</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-gray-300 text-sm whitespace-pre-wrap">{note.content}</p>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-gray-300 text-sm mt-2 whitespace-pre-wrap">{note.content}</p>
+
+                        <div className="flex items-center justify-between border-t border-gray-800 pt-3 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleNoteSecret(note)}
+                            className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+                              isHiddenNote
+                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20'
+                                : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:bg-gray-700'
+                            }`}
+                            title={isHiddenNote ? "Remove hidden password status" : "Mark note as hidden password"}
+                          >
+                            {isHiddenNote ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                            <span>{isHiddenNote ? 'Make Public' : 'Hide / Make Secret'}</span>
+                          </button>
+
+                          <div className="flex gap-2">
+                            <button onClick={() => handleEditNote(note)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Edit</button>
+                            <button onClick={() => handleDelete('notes', note._id)} className="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Delete</button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2 justify-end border-t border-gray-800 pt-3 mt-1">
-                        <button onClick={() => handleEditNote(note)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Edit</button>
-                        <button onClick={() => handleDelete('notes', note._id)} className="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Delete</button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {notes.length === 0 && <p className="text-center text-gray-500 py-10">No notes saved yet.</p>}
                 </div>
               </div>

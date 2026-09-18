@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/Note');
-const authMiddleware = require('../middleware/authMiddleware'); // Sirf admin access ke liye
+const authMiddleware = require('../middleware/authMiddleware');
 
-// GET: Saare notes fetch karna
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const notes = await Note.find().sort({ createdAt: -1 });
@@ -13,12 +12,12 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// POST: Naya note banana
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const newNote = new Note({
       title: req.body.title,
-      content: req.body.content
+      content: req.body.content,
+      isSecret: req.body.isSecret ?? false
     });
     const savedNote = await newNote.save();
     res.status(201).json(savedNote);
@@ -27,21 +26,22 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// PUT: Note ko Edit/Update karna
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const updatedNote = await Note.findByIdAndUpdate(
-      req.params.id,
-      { title: req.body.title, content: req.body.content },
-      { new: true }
-    );
+    const updateData = {
+      title: req.body.title,
+      content: req.body.content
+    };
+    if (req.body.isSecret !== undefined) {
+      updateData.isSecret = req.body.isSecret;
+    }
+    const updatedNote = await Note.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(updatedNote);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
-// DELETE: Note delete karna
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     await Note.findByIdAndDelete(req.params.id);
