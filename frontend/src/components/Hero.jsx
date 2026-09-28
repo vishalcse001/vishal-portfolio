@@ -50,7 +50,7 @@ function Hero() {
             View Projects
           </a>
           <a
-            href="/Vishal_Yadav_Resume.pdf"
+            href="/Vishal_Yadav_Resume_Updated.pdf"
             download
             className="hover-target border-2 border-blue-600 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-full font-medium hover:bg-blue-50 dark:hover:bg-slate-800 hover:-translate-y-1 transition-all"
           >
